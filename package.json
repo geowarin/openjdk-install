@@ -1,0 +1,21 @@
+{
+  "name": "openjdk-install",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "github-api": "^3.0.0",
+    "got": "^9.0.0",
+    "inquirer": "^6.1.0",
+    "sequency": "^0.19.2"
+  },
+  "devDependencies": {
+    "@types/node": "^10.7.0",
+    "ts-node": "^7.0.1",
+    "typescript": "^3.0.1"
+  },
+  "scripts": {
+    "check": "tsc --noemit",
+    "test": "ts-node src/index.ts"
+  }
+}

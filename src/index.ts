@@ -42,7 +42,7 @@ async function downloadJdk(jdkVersion: number, doChecksum: boolean = true) {
     const tarLocation = join(temp, tarFile.name);
 
     console.log(`Downloading tar to ${tarLocation}`);
-    await download(tarFile.browser_download_url, temp, {encoding: "binary"});
+    await download(tarFile.browser_download_url, temp);
 
     return checksum(doChecksum)(checksumLocation, temp, tarFile.name)
         .then(() => decompress(tarLocation, temp))

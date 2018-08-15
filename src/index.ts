@@ -1,14 +1,17 @@
 import * as GitHub from 'github-api';
+import * as download from 'download';
 import {asSequence} from 'sequency';
+import {join} from "path";
+import * as tmp from "tmp";
 
-(async () => {
+const sumchecker = require("sumchecker");
+import decompress = require("decompress");
+
+async function downloadJdk(jdkVersion: number, doChecksum: boolean = true) {
     const gh = new GitHub();
-    const response = await gh.getRepo("AdoptOpenJDK/openjdk10-releases").listReleases();
-    // const response = await got('https://api.github.com/repos/AdoptOpenJDK/openjdk10-releases/releases');
+    const response = await gh.getRepo(`AdoptOpenJDK/openjdk${jdkVersion}-releases`).listReleases();
 
     const data = response.data;
-    console.log(data);
-    console.log("-------");
 
     const latestRelease = asSequence(data)
         .sortedBy(r => r.published_at)
@@ -18,8 +21,43 @@ import {asSequence} from 'sequency';
         .filter(r => r.name.includes("Mac"))
         .toArray();
 
+    const tarFile = asSequence(macReleases).find(r => r.name.endsWith("tar.gz"));
+    const checksumFile = asSequence(macReleases).find(r => r.name.endsWith("sha256.txt"));
 
-    console.log(macReleases);
+    if (tarFile == null) {
+        throw new Error(`Could not find tar for jdk ${jdkVersion}`)
+    }
+    if (checksumFile == null) {
+        throw new Error(`Could not find checksum for jdk ${jdkVersion}`)
+    }
 
+    const temp = tmp.dirSync().name;
+    const csLocation = join(temp, checksumFile.name);
 
+    console.log(temp);
+    console.log(`Downloading checksum to ${csLocation}`);
+
+    await download(checksumFile.browser_download_url, temp);
+    const checksumFilename = join(temp, checksumFile.name);
+
+    const tarLocation = join(temp, tarFile.name);
+
+    console.log(`Downloading tar to ${tarLocation}`);
+    await download(tarFile.browser_download_url, temp);
+
+    return checksum(doChecksum)(checksumFilename, temp, tarFile.name)
+        .then(() => decompress(tarLocation, temp))
+        .then(jdk => join(temp, jdk[0].path));
+}
+
+function checksum(check: boolean): (c: string, t: string, f: string) => Promise<any> {
+    if (check) {
+        return (checksumFilename, temp, tarFileName) => sumchecker("sha256", checksumFilename, temp, tarFileName);
+    }
+    return () => Promise.resolve();
+}
+
+(async () => {
+    const jdkPath = await downloadJdk(10, false);
+    console.log(`jdk downloaded to ${jdkPath}`);
 })();

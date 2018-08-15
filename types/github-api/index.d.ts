@@ -2,6 +2,7 @@ declare module 'github-api' {
 
     interface Asset {
         name: string
+        browser_download_url: string
     }
 
     interface Release {

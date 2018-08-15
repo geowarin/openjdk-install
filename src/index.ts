@@ -42,7 +42,7 @@ async function downloadJdk(jdkVersion: number, doChecksum: boolean = true) {
     const tarLocation = join(temp, tarFile.name);
 
     console.log(`Downloading tar to ${tarLocation}`);
-    await download(tarFile.browser_download_url, temp, {encoding: "utf-8"});
+    await download(tarFile.browser_download_url, temp, {encoding: "binary"});
 
     return checksum(doChecksum)(checksumLocation, temp, tarFile.name)
         .then(() => decompress(tarLocation, temp))
@@ -51,7 +51,10 @@ async function downloadJdk(jdkVersion: number, doChecksum: boolean = true) {
 
 function checksum(check: boolean): (c: string, t: string, f: string) => Promise<any> {
     if (check) {
-        return (checksumFilename, temp, tarFileName) => sumchecker("sha256", checksumFilename, temp, tarFileName);
+        return (checksumFilename, temp, tarFileName) => {
+            return new sumchecker.ChecksumValidator("sha256", checksumFilename, {defaultTextEncoding:"binary"})
+                .validate(temp, tarFileName);
+        };
     }
     return () => Promise.resolve();
 }

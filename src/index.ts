@@ -32,20 +32,19 @@ async function downloadJdk(jdkVersion: number, doChecksum: boolean = true) {
     }
 
     const temp = tmp.dirSync().name;
-    const csLocation = join(temp, checksumFile.name);
+    const checksumLocation = join(temp, checksumFile.name);
 
     console.log(temp);
-    console.log(`Downloading checksum to ${csLocation}`);
+    console.log(`Downloading checksum to ${checksumLocation}`);
 
     await download(checksumFile.browser_download_url, temp);
-    const checksumFilename = join(temp, checksumFile.name);
 
     const tarLocation = join(temp, tarFile.name);
 
     console.log(`Downloading tar to ${tarLocation}`);
-    await download(tarFile.browser_download_url, temp);
+    await download(tarFile.browser_download_url, temp, {encoding: "utf-8"});
 
-    return checksum(doChecksum)(checksumFilename, temp, tarFile.name)
+    return checksum(doChecksum)(checksumLocation, temp, tarFile.name)
         .then(() => decompress(tarLocation, temp))
         .then(jdk => join(temp, jdk[0].path));
 }
@@ -58,6 +57,6 @@ function checksum(check: boolean): (c: string, t: string, f: string) => Promise<
 }
 
 (async () => {
-    const jdkPath = await downloadJdk(10, false);
+    const jdkPath = await downloadJdk(10);
     console.log(`jdk downloaded to ${jdkPath}`);
 })();
